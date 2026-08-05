@@ -5,7 +5,7 @@
 // presentational — Gallery.tsx owns open/closed state and which tile it is.
 
 import React, { useEffect } from "react";
-import type { TileContent } from "./v1/galleryData";
+import type { TileContent } from "./galleryData";
 
 export type SelectedTile = TileContent & { x: number; y: number };
 
@@ -32,9 +32,6 @@ export default function GalleryOverlay({ open, content, onClose }: Props) {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <button className="gallery-close" onClick={onClose} aria-label="Close">
-        ✕
-      </button>
       {content && (
         <div className="gallery-detail">
           <div

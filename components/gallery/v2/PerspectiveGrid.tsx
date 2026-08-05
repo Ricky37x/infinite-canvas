@@ -1,105 +1,159 @@
 "use client";
 
-import React, { useRef, useState, useMemo, useEffect } from "react";
-import Image from "next/image";
-import type { TileContent } from "../v1/galleryData"; // Assuming you reuse v1's data structure
+import React, { useRef, useState, useMemo } from "react";
+import Link from "next/link";
+import type { TileContent } from "../v1/galleryData";
 
-interface PerspectiveGridProps {
+export interface PerspectiveGridProps {
   items: TileContent[];
-  gridCols?: number; // Number of columns in the grid
+  gridCols?: number;
 }
 
 export default function PerspectiveGrid({ items, gridCols = 4 }: PerspectiveGridProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  
-  // Mouse state: track X and Y position, relative to the center of the container
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-  
-  // Track Hover State (could add depth effect here)
-  const [hoveredTileId, setHoveredTileId] = useState<string | null>(null);
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0, rawX: 0, rawY: 0 });
 
-  // Mouse Move Handler: Updates mouse position relative to the container center
   const handleMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
     if (!containerRef.current) return;
     const { clientX, clientY } = event;
     const rect = containerRef.current.getBoundingClientRect();
-    
-    // Calculate mouse position
-    const x = clientX - rect.left - rect.width / 2;
-    const y = clientY - rect.top - rect.height / 2;
-    
-    setMousePos({ x, y });
-  };
-  
-  // Reset mouse position
-  const handleMouseLeave = () => {
-    setMousePos({ x: 0, y: 0 });
+
+    const x = (clientX - rect.left - rect.width / 2) / (rect.width / 2);
+    const y = (clientY - rect.top - rect.height / 2) / (rect.height / 2);
+
+    setMousePos({ x, y, rawX: clientX, rawY: clientY });
   };
 
-  // Memoize the final transform string based on mouse position
-  // The perspective() value defines how "strong" the 3D effect is.
-  const perspectiveTransform = useMemo(() => {
-    const tiltAmount = 15; // Max tilt angle in degrees
-    const { x, y } = mousePos;
-    
-    if (!containerRef.current) return "perspective(1000px) rotateX(0deg) rotateY(0deg)";
-    
-    const { width, height } = containerRef.current.getBoundingClientRect();
-    
-    // Normalize values between -1 and 1
-    const rotateY = (x / width) * tiltAmount;
-    const rotateX = -(y / height) * tiltAmount;
-    
-    return `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
-  }, [mousePos]);
+  const handleMouseLeave = () => {
+    setMousePos({ x: 0, y: 0, rawX: 0, rawY: 0 });
+  };
+
+  const transformStyle = useMemo(() => {
+    const maxTilt = 12;
+    const rotateY = mousePos.x * maxTilt;
+    const rotateX = -mousePos.y * maxTilt;
+
+    return {
+      transform: `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`,
+    };
+  }, [mousePos.x, mousePos.y]);
+
+  // Distribute items across grid columns
+  const columnsData = useMemo(() => {
+    const cols: TileContent[][] = Array.from({ length: gridCols }, () => []);
+    items.forEach((item, index) => {
+      cols[index % gridCols].push(item);
+    });
+    return cols;
+  }, [items, gridCols]);
 
   return (
     <main
-      className="relative w-screen h-screen bg-slate-950 text-white font-sans overflow-hidden flex items-center justify-center"
+      className="relative w-screen h-screen bg-zinc-950 text-zinc-100 font-sans overflow-hidden flex items-center justify-center select-none"
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
     >
-      {/* 3D Container: This is the div that actually gets tilted */}
-      <div
-        ref={containerRef}
-        className="w-[90vw] h-[80vh] grid gap-6 p-10 bg-slate-900 border border-slate-800 rounded-3xl transition-transform duration-100 ease-linear shadow-xl shadow-black/30"
-        style={{
-          gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))`,
-          transform: perspectiveTransform,
-          willChange: "transform",
-        }}
-      >
-        {items.map((item) => (
-          <div
-            key={item.id}
-            className="group relative aspect-[4/5] bg-slate-800 rounded-xl overflow-hidden border border-slate-700 shadow-lg shadow-black/20 hover:border-blue-500 transition-all duration-300"
-            onMouseEnter={() => setHoveredTileId(item.id)}
-            onMouseLeave={() => setHoveredTileId(null)}
-          >
-            {/* Tile Image */}
-            <Image
-              src={item.image}
-              alt={item.title}
-              fill
-              className="object-cover group-hover:scale-105 transition-transform duration-500"
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-            />
-            
-            {/* Hover Glare Overlay (simple gradient) */}
-            <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/5 to-white/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+      {/* Dynamic Keyframe Animations for Infinite Moving Columns */}
+      <style jsx global>{`
+        @keyframes scrollUp {
+          0% { transform: translateY(0%); }
+          100% { transform: translateY(-50%); }
+        }
+        @keyframes scrollDown {
+          0% { transform: translateY(-50%); }
+          100% { transform: translateY(0%); }
+        }
+        .animate-scroll-up {
+          animation: scrollUp 28s linear infinite;
+        }
+        .animate-scroll-down {
+          animation: scrollDown 28s linear infinite;
+        }
+        .animate-scroll-up:hover,
+        .animate-scroll-down:hover {
+          animation-play-state: paused;
+        }
+      `}</style>
 
-            {/* Title & Category (Optional) */}
-            <div className="absolute bottom-0 left-0 w-full p-4 bg-gradient-to-t from-black/80 to-transparent translate-y-2 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
-              <p className="text-xs text-blue-400 font-medium uppercase tracking-wider">{item.category}</p>
-              <h3 className="text-sm font-semibold">{item.title}</h3>
-            </div>
-          </div>
-        ))}
+      {/* Dynamic Cursor Spotlight Beam */}
+      <div
+        className="pointer-events-none absolute inset-0 z-0 transition-opacity duration-500"
+        style={{
+          background: `radial-gradient(600px circle at ${mousePos.rawX}px ${mousePos.rawY}px, rgba(255,255,255,0.03), transparent 80%)`,
+        }}
+      />
+
+      {/* Header Bar */}
+      <div className="fixed top-6 inset-x-6 z-50 flex items-center justify-between max-w-6xl mx-auto pointer-events-none">
+        <Link
+          href="/"
+          className="pointer-events-auto flex items-center gap-2 px-4 py-1.5 bg-zinc-900/80 hover:bg-zinc-800 border border-zinc-800 rounded-full text-xs font-mono text-zinc-400 hover:text-zinc-100 transition-all shadow-xl backdrop-blur-md"
+        >
+          <span>←</span>
+          <span>Back</span>
+        </Link>
+        <span className="text-[11px] font-mono text-zinc-500 uppercase tracking-widest bg-zinc-900/50 px-3 py-1 rounded-full border border-zinc-800/50 backdrop-blur-md">
+          
+        </span>
       </div>
-      
-      {/* Debug Info (Optional) */}
-      <div className="absolute bottom-4 left-4 text-xs font-mono text-slate-600">
-        Mouse Relative: {Math.round(mousePos.x)}, {Math.round(mousePos.y)}
+
+      {/* 3D Transform Scene Container */}
+      <div
+        className="w-full max-w-6xl h-[85vh] overflow-hidden transition-transform duration-200 ease-out z-10"
+        style={{
+          ...transformStyle,
+          transformStyle: "preserve-3d",
+        }}
+        ref={containerRef}
+      >
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 h-full">
+          {columnsData.map((colItems, colIdx) => {
+            // Duplicate column array to make seamless loop
+            const duplicatedItems = [...colItems, ...colItems, ...colItems];
+            const isEven = colIdx % 2 === 0;
+
+            return (
+              <div key={colIdx} className="overflow-hidden h-full">
+                <div
+                  className={`flex flex-col gap-6 ${
+                    isEven ? "animate-scroll-up" : "animate-scroll-down"
+                  }`}
+                >
+                  {duplicatedItems.map((item, itemIdx) => (
+                    <div
+                      key={`${item.id}-${itemIdx}`}
+                      className="group relative aspect-[3/4] w-full rounded-2xl bg-zinc-900/80 border border-zinc-800/80 transition-all duration-300 ease-out hover:border-zinc-500/80 cursor-pointer flex-shrink-0"
+                      style={{ transformStyle: "preserve-3d" }}
+                    >
+                      {/* Glow Backdrop */}
+                      <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-zinc-500/20 to-zinc-200/10 opacity-0 group-hover:opacity-100 blur-xl transition-opacity duration-500 pointer-events-none" />
+
+                      {/* Card Container with Z-Pop */}
+                      <div className="relative w-full h-full rounded-2xl overflow-hidden transition-transform duration-500 ease-out group-hover:[transform:translateZ(40px)] shadow-2xl group-hover:shadow-black/90">
+                        <img
+                          src={item.image}
+                          alt={item.title}
+                          className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+                        />
+
+                        <div className="absolute inset-0 bg-gradient-to-tr from-zinc-950/80 via-transparent to-white/10 opacity-60 group-hover:opacity-20 transition-opacity pointer-events-none" />
+
+                        <div className="absolute inset-x-3 bottom-3 p-3 bg-zinc-950/70 backdrop-blur-md border border-white/10 rounded-xl translate-y-2 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
+                          <span className="text-[9px] font-mono text-zinc-400 uppercase tracking-widest block mb-0.5">
+                            {item.category || "Asset"}
+                          </span>
+                          <h3 className="text-xs font-medium text-zinc-100 truncate">
+                            {item.title}
+                          </h3>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
     </main>
   );
