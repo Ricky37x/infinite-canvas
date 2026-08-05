@@ -2,10 +2,10 @@ import Link from "next/link";
 
 const VERSIONS = [
   { id: "1", name: "not decided", route: "/v1", desc: "." },
-  { id: "2", name: "not decided", route: "/v2", desc: "." },
-  { id: "3", name: "not decided", route: "/v3", desc: "." },
-  { id: "4", name: "not decided", route: "/v4", desc: "." },
-  { id: "5", name: "not decided", route: "/v5", desc: "." },
+  { id: "2", name: "perspective grid", route: "/v2", desc: "" },
+  { id: "3", name: "depth tunnel", route: "/v3", desc: "." },
+  { id: "4", name: "elastic smh", route: "/v4", desc: "." },
+  { id: "5", name: "cursor follower line gallery ", route: "/v5", desc: "." },
   { id: "6", name: "not decided", route: "/v6", desc: "." },
   { id: "7", name: "not decided", route: "/v7", desc: "." },
   { id: "8", name: "not decided", route: "/v8", desc: "." },
