@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import Gallery from "@/components/gallery/v1/Gallery";
 
 const MY_PORTFOLIO = [
@@ -17,7 +18,16 @@ const MY_PORTFOLIO = [
 
 export default function V1Page() {
   return (
-    <main className="relative w-screen h-screen font-sans overflow-hidden bg-slate-950">
+    <main className="relative w-screen h-screen overflow-hidden bg-zinc-950 text-zinc-100 font-sans">
+      {/* Single Back Button */}
+      <Link 
+        href="/"
+        className="fixed top-5 left-5 z-50 flex items-center gap-2 px-3.5 py-1.5 bg-zinc-900/90 hover:bg-zinc-800 border border-zinc-700/60 rounded-full text-xs font-mono text-zinc-300 hover:text-white transition-all shadow-lg backdrop-blur-sm"
+      >
+        <span>←</span>
+        <span>Back</span>
+      </Link>
+
       <div className="absolute inset-0 w-full h-full">
         <Gallery
           items={MY_PORTFOLIO}

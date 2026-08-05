@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback } from "react";
 import InfiniteCanvas from "./InfiniteCanvas";
-import GalleryOverlay, { type SelectedTile } from "../GalleryOverlay";
+import GalleryOverlay, { type SelectedTile } from "./GalleryOverlay";
 import type { TileContent } from "./galleryData";
 
 interface GalleryProps {
