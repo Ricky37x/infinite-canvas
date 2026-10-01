@@ -6,7 +6,7 @@
 // pixel geometry, so this stays a dumb, easily-memoized leaf component.
 
 import React from "react";
-import type { TileContent } from "./v1/galleryData";
+import type { TileContent } from "./galleryData";
 
 type Props = {
   xPx: number;
